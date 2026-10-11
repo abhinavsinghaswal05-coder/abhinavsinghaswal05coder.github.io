@@ -1,0 +1,507 @@
+html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Abhinav Singh Aswal | Portfolio & Party Game Hub</title>
+<style>
+  :root {
+    --cream: #FFF7E8;
+    --ink: #2E2440;
+    --purple: #9B72CF;
+    --blue: #35A7FF;
+    --shadow: rgba(46, 36, 64, 0.22);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    background: linear-gradient(160deg, #E9DFFF 0%, var(--cream) 60%);
+    font-family: -apple-system, "Segoe UI Rounded", "Segoe UI", Verdana, sans-serif;
+    color: var(--ink);
+  }
+  .app-container { display: none; flex-direction: column; height: 100%; }
+  .app-container.active { display: flex; }
+
+  .screen {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 24px; overflow-y: auto;
+  }
+  .hidden { display: none !important; }
+
+  h1 { font-size: clamp(26px, 6vw, 46px); font-weight: 800; margin: 0 0 6px; }
+  h1 span { color: var(--purple); }
+  .creator-tag { color: var(--blue); font-weight: 700; margin-bottom: 20px; font-size: 1.1rem; }
+  .subtitle { font-size: clamp(14px, 2.5vw, 17px); color: #6b5f8a; margin-bottom: 26px; max-width: 480px; }
+
+  .big-btn {
+    background: var(--purple); color: white; border: none;
+    padding: 16px 40px; font-size: 20px; font-weight: 800;
+    border-radius: 999px; cursor: pointer; box-shadow: 0 5px 0 #7a56ab;
+    transition: transform .08s ease;
+  }
+  .big-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #7a56ab; }
+
+  .ghost-btn {
+    background: white; color: var(--ink); border: none;
+    padding: 12px 28px; font-size: 15px; font-weight: 700;
+    border-radius: 999px; cursor: pointer; box-shadow: 0 4px 0 var(--shadow);
+    margin-top: 10px;
+  }
+
+  .count-row { display: flex; gap: 12px; margin-bottom: 26px; }
+  .count-btn {
+    width: 60px; height: 60px; border-radius: 16px; border: none;
+    background: white; font-size: 24px; font-weight: 800; cursor: pointer;
+    box-shadow: 0 4px 0 #d8cff0;
+  }
+  .count-btn.active { background: var(--purple); color: white; box-shadow: 0 4px 0 #7a56ab; }
+
+  .names-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 28px; }
+  .name-chip {
+    display: flex; align-items: center; gap: 8px;
+    background: white; border-radius: 999px; padding: 8px 16px;
+    font-weight: 700; font-size: 14px; box-shadow: 0 3px 0 var(--shadow);
+  }
+  .name-chip .dot { width: 12px; height: 12px; border-radius: 50%; }
+
+  .game-screen { position: relative; flex: 1; display: none; }
+  .game-screen.active { display: block; }
+
+  .hud-top {
+    position: absolute; top: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px; z-index: 5; pointer-events: none;
+  }
+  .badge {
+    display: flex; align-items: center; gap: 8px;
+    background: white; border-radius: 999px; padding: 8px 18px;
+    font-weight: 800; font-size: 16px; box-shadow: 0 3px 0 var(--shadow);
+    pointer-events: auto;
+  }
+  .badge .dot { width: 14px; height: 14px; border-radius: 50%; }
+  .dark-badge {
+    background: var(--ink); color: white; border-radius: 999px;
+    padding: 8px 18px; font-weight: 700; font-size: 15px; pointer-events: auto; cursor: pointer;
+  }
+  .score-col {
+    position: absolute; z-index: 5; top: 60px; left: 18px;
+    display: flex; flex-direction: column; gap: 6px; pointer-events: none;
+  }
+  .score-chip {
+    background: white; border-radius: 999px; padding: 5px 12px;
+    font-weight: 700; font-size: 13px; box-shadow: 0 2px 0 var(--shadow);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .score-chip .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .score-chip.out { opacity: 0.35; text-decoration: line-through; }
+
+  .instructions {
+    position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+    background: rgba(255,255,255,0.92); padding: 8px 18px; border-radius: 999px;
+    font-size: 13px; color: #6b5f8a; z-index: 5; pointer-events: none; text-align: center;
+    max-width: 90%;
+  }
+
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; background: #c5b3e6; }
+
+  .winner-badge {
+    width: 90px; height: 90px; border-radius: 50%; margin: 0 auto 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px; box-shadow: 0 5px 0 var(--shadow);
+  }
+  .final-scores { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 18px 0 26px; }
+  .final-chip {
+    background: white; border-radius: 14px; padding: 10px 18px;
+    font-weight: 700; box-shadow: 0 3px 0 var(--shadow); font-size: 15px;
+  }
+
+  .dpad {
+    position: absolute; width: 120px; height: 120px; z-index: 6;
+    display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+    gap: 4px; pointer-events: auto;
+  }
+  .dpad-btn {
+    width: 38px; height: 38px; border-radius: 10px; border: none;
+    background: rgba(255,255,255,0.75); color: #2E2440; font-size: 16px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 0 rgba(46,36,64,0.15); touch-action: none; cursor: pointer;
+  }
+  .dpad-btn:active { background: rgba(255,255,255,0.95); }
+  .dpad-up { grid-column: 2; grid-row: 1; }
+  .dpad-left { grid-column: 1; grid-row: 2; }
+  .dpad-right { grid-column: 3; grid-row: 2; }
+  .dpad-down { grid-column: 2; grid-row: 3; }
+
+  .game-cards {
+    display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; max-width: 900px; margin-bottom: 20px;
+  }
+  .game-card {
+    width: 200px; background: white; border-radius: 22px; padding: 22px 18px;
+    box-shadow: 0 6px 0 var(--shadow); cursor: pointer; border: none;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+  .game-card:active { transform: translateY(2px); }
+  .game-card .icon { font-size: 40px; }
+  .game-card .title { font-size: 16px; font-weight: 800; }
+  .game-card .desc { font-size: 12px; color: #6b5f8a; }
+
+  .solo-toggle {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: white; border-radius: 999px; padding: 10px 20px;
+    box-shadow: 0 3px 0 var(--shadow); margin-bottom: 22px; cursor: pointer;
+    font-weight: 700; font-size: 14px;
+  }
+  .solo-toggle .switch {
+    width: 40px; height: 22px; border-radius: 999px; background: #E3DAF7;
+    position: relative;
+  }
+  .solo-toggle .switch::after {
+    content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
+    border-radius: 50%; background: white; transition: transform .15s;
+  }
+  .solo-toggle.on .switch { background: var(--purple); }
+  .solo-toggle.on .switch::after { transform: translateX(18px); }
+</style>
+</head>
+<body>
+
+  <!-- Setup Screen -->
+  <div id="setupApp" class="app-container active">
+    <div class="screen">
+      <h1>Party Game <span>Hub</span></h1>
+      <div class="creator-tag">Created by Abhinav Singh Aswal</div>
+      <p class="subtitle">Grab your friends — everyone plays together locally on this single device!</p>
+      
+      <div class="solo-toggle" id="aiToggle" onclick="toggleAI()">
+        <span>Play with AI bots</span>
+        <div class="switch"></div>
+      </div>
+
+      <p style="font-weight:700; margin-bottom:10px;">Select Number of Players:</p>
+      <div class="count-row">
+        <button class="count-btn active" onclick="setPlayers(2)">2</button>
+        <button class="count-btn" onclick="setPlayers(3)">3</button>
+        <button class="count-btn" onclick="setPlayers(4)">4</button>
+      </div>
+
+      <div class="names-row" id="playerList"></div>
+      <button class="big-btn" onclick="goToHub()">Continue to Hub</button>
+    </div>
+  </div>
+
+  <!-- Hub Menu Screen -->
+  <div id="hubApp" class="app-container">
+    <div class="screen">
+      <h1>Pick a <span>Game</span></h1>
+      <p class="subtitle">Tap any game mode below to start the action.</p>
+      
+      <div class="game-cards">
+        <button class="game-card" onclick="launchGame('coin')">
+          <span class="icon">🪙</span>
+          <span class="title">Coin Race</span>
+          <span class="desc">Grab the most coins in 30 seconds</span>
+        </button>
+        <button class="game-card" onclick="launchGame('sumo')">
+          <span class="icon">🤼</span>
+          <span class="title">Sumo Push</span>
+          <span class="desc">Shove friends off a shrinking ring</span>
+        </button>
+        <button class="game-card" onclick="launchGame('duel')">
+          <span class="icon">⚡</span>
+          <span class="title">Deflect Duel</span>
+          <span class="desc">Dodge or deflect bullets to survive</span>
+        </button>
+      </div>
+      <button class="ghost-btn" onclick="goToSetup()">Back to Setup</button>
+    </div>
+  </div>
+
+  <!-- Arena View -->
+  <div id="arenaApp" class="app-container">
+    <div class="game-screen active">
+      <div class="hud-top">
+        <button class="dark-badge" onclick="exitToHub()">⚙️ Exit</button>
+        <div class="badge" id="timerBadge">⏱️ <span id="timerText">30</span></div>
+      </div>
+      <div class="score-col" id="liveScores"></div>
+      <div class="instructions" id="gameInstructions">Use D-Pads to control!</div>
+      
+      <div id="dpad-0" class="dpad" style="bottom:20px; left:20px;">
+        <button class="dpad-btn dpad-up" data-p="0" data-d="up">▲</button>
+        <button class="dpad-btn dpad-left" data-p="0" data-d="left">◀</button>
+        <button class="dpad-btn dpad-right" data-p="0" data-d="right">▶</button>
+        <button class="dpad-btn dpad-down" data-p="0" data-d="down">▼</button>
+      </div>
+      <div id="dpad-1" class="dpad" style="top:20px; right:20px; transform: rotate(180deg);">
+        <button class="dpad-btn dpad-up" data-p="1" data-d="up">▲</button>
+Use code with caution.
+◀
+▶
+▼
+
+
+▲
+◀
+▶
+▼
+
+
+▲
+◀
+▶
+▼
+👑
+Match Finished!
+
+Play Rematch
+Return to Hub
+
+let playerCount = 2;
+let useAI = false;
+let activeGameMode = '';
+let players = [];
+let coins = [];
+let hazards = [];
+let gameTimer = null;
+let timeLeft = 30;
+let animationFrameId = null;
+const playerColors = ['#FF5964', '#35A7FF', '#386150', '#F7B05B'];
+const canvas = document.getElementById('stageCanvas');
+const ctx = canvas.getContext('2d');
+function toggleAI() {
+useAI = !useAI;
+document.getElementById('aiToggle').classList.toggle('on', useAI);
+renderSetupChips();
+}
+function setPlayers(count) {
+playerCount = count;
+document.querySelectorAll('.count-btn').forEach(btn => {
+btn.classList.toggle('active', parseInt(btn.innerText) === count);
+});
+renderSetupChips();
+}
+function renderSetupChips() {
+const container = document.getElementById('playerList');
+container.innerHTML = '';
+for (let i = 0; i < playerCount; i++) {
+const chip = document.createElement('div');
+chip.className = 'name-chip';
+const isBot = i > 0 && useAI;
+chip.innerHTML = <div class="dot" style="background:${playerColors[i]}"></div> Player ${i + 1} ${isBot ? '(Bot)' : ''};
+container.appendChild(chip);
+}
+}
+function switchScreen(appId) {
+document.querySelectorAll('.app-container').forEach(app => app.classList.remove('active'));
+document.getElementById(appId).classList.add('active');
+}
+function goToSetup() { switchScreen('setupApp'); }
+function goToHub() { switchScreen('hubApp'); }
+function exitToHub() {
+cleanUpLoops();
+goToHub();
+}
+function resizeCanvas() {
+canvas.width = canvas.parentElement.clientWidth;
+canvas.height = canvas.parentElement.clientHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+const inputs = {};
+document.querySelectorAll('.dpad-btn').forEach(btn => {
+['touchstart', 'mousedown'].forEach(evtType => {
+btn.addEventListener(evtType, (e) => {
+e.preventDefault();
+const p = btn.getAttribute('data-p');
+const d = btn.getAttribute('data-d');
+if (!inputs[p]) inputs[p] = {};
+inputs[p][d] = true;
+});
+});
+['touchend', 'mouseup', 'mouseleave'].forEach(evtType => {
+btn.addEventListener(evtType, (e) => {
+const p = btn.getAttribute('data-p');
+const d = btn.getAttribute('data-d');
+if (inputs[p]) inputs[p][d] = false;
+});
+});
+});
+function cleanUpLoops() {
+clearInterval(gameTimer);
+cancelAnimationFrame(animationFrameId);
+}
+function launchGame(mode) {
+activeGameMode = mode;
+switchScreen('arenaApp');
+resizeCanvas();
+cleanUpLoops();
+document.getElementById('dpad-2').classList.toggle('hidden', playerCount < 3 || useAI);
+document.getElementById('dpad-3').classList.toggle('hidden', playerCount < 4 || useAI);
+players = []; coins = []; hazards = [];
+timeLeft = mode === 'coin' ? 30 : 45;
+document.getElementById('timerText').innerText = timeLeft;
+for (let i = 0; i < playerCount; i++) {
+players.push({
+id: i,
+x: canvas.width / 2 + (i === 0 ? -60 : i === 1 ? 60 : i === 2 ? -30 : 30),
+y: canvas.height / 2 + (i < 2 ? -40 : 40),
+radius: 18,
+speed: 4.5,
+score: 0,
+color: playerColors[i],
+isBot: i > 0 && useAI,
+alive: true
+});
+}
+const inst = document.getElementById('gameInstructions');
+if (mode === 'coin') inst.innerText = "🪙 Coin Race: Dash to collect the gold sparkles!";
+if (mode === 'sumo') inst.innerText = "🤼 Sumo Push: Push opponents off the shrinking platform!";
+if (mode === 'duel') inst.innerText = "⚡ Deflect Duel: Steer clear of bouncing projectiles!";
+gameTimer = setInterval(() => {
+timeLeft--;
+document.getElementById('timerText').innerText = timeLeft;
+if (timeLeft <= 0) handleMatchEnd();
+}, 1000);
+gameLoop();
+}
+function gameLoop() {
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+updateGameLogic();
+renderSceneGraphics();
+updateLiveHUD();
+if ((activeGameMode === 'sumo' || activeGameMode === 'duel') && players.filter(p => p.alive).length <= 1) {
+handleMatchEnd();
+return;
+}
+animationFrameId = requestAnimationFrame(gameLoop);
+}
+function updateGameLogic() {
+if (activeGameMode === 'coin' && coins.length < 5 && Math.random() < 0.04) {
+coins.push({ x: Math.random() * (canvas.width - 40) + 20, y: Math.random() * (canvas.height - 40) + 20 });
+}
+if (activeGameMode === 'duel' && hazards.length < 4 && Math.random() < 0.02) {
+hazards.push({
+x: canvas.width / 2, y: canvas.height / 2,
+vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8, radius: 8
+});
+}
+players.forEach(p => {
+if (!p.alive) return;
+if (p.isBot) {
+if (activeGameMode === 'coin' && coins.length > 0) {
+let target = coins[0];
+if (p.x < target.x) p.x += p.speed * 0.7;
+if (p.x > target.x) p.x -= p.speed * 0.7;
+if (p.y < target.y) p.y += p.speed * 0.7;
+if (p.y > target.y) p.y -= p.speed * 0.7;
+} else {
+p.x += (Math.random() - 0.5) * p.speed;
+p.y += (Math.random() - 0.5) * p.speed;
+}
+} else {
+const pIn = inputs[p.id] || {};
+if (pIn.up) p.y -= p.speed;
+if (pIn.down) p.y += p.speed;
+if (pIn.left) p.x -= p.speed;
+if (pIn.right) p.x += p.speed;
+}
+p.x = Math.max(p.radius, Math.min(canvas.width - p.radius, p.x));
+p.y = Math.max(p.radius, Math.min(canvas.height - p.radius, p.y));
+if (activeGameMode === 'coin') {
+coins.forEach((c, idx) => {
+if (Math.hypot(p.x - c.x, p.y - c.y) < p.radius + 10) {
+p.score++;
+coins.splice(idx, 1);
+}
+});
+}
+if (activeGameMode === 'sumo') {
+let cx = canvas.width / 2, cy = canvas.height / 2;
+let ringR = Math.max(80, Math.min(canvas.width, canvas.height) * 0.4 - (45 - timeLeft) * 4);
+if (Math.hypot(p.x - cx, p.y - cy) > ringR) p.alive = false;
+players.forEach(other => {
+if (p.id !== other.id && other.alive) {
+let d = Math.hypot(p.x - other.x, p.y - other.y);
+if (d < p.radius + other.radius) {
+let angle = Math.atan2(p.y - other.y, p.x - other.x);
+p.x += Math.cos(angle) * 8;
+p.y += Math.sin(angle) * 8;
+}
+}
+});
+}
+});
+if (activeGameMode === 'duel') {
+hazards.forEach(h => {
+h.x += h.vx; h.y += h.vy;
+if (h.x < h.radius || h.x > canvas.width - h.radius) h.vx *= -1;
+if (h.y < h.radius || h.y > canvas.height - h.radius) h.vy *= -1;
+players.forEach(p => {
+if (p.alive && Math.hypot(p.x - h.x, p.y - h.y) < p.radius + h.radius) p.alive = false;
+});
+});
+}
+}
+function renderSceneGraphics() {
+if (activeGameMode === 'sumo') {
+let cx = canvas.width / 2, cy = canvas.height / 2;
+let ringR = Math.max(80, Math.min(canvas.width, canvas.height) * 0.4 - (45 - timeLeft) * 4);
+ctx.beginPath(); ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+ctx.fillStyle = '#dbd2ef'; ctx.fill();
+ctx.lineWidth = 6; ctx.strokeStyle = '#9B72CF'; ctx.stroke();
+}
+coins.forEach(c => {
+ctx.beginPath(); ctx.arc(c.x, c.y, 9, 0, Math.PI * 2);
+ctx.fillStyle = '#ffd700'; ctx.fill();
+});
+hazards.forEach(h => {
+ctx.beginPath(); ctx.arc(h.x, h.y, h.radius, 0, Math.PI * 2);
+ctx.fillStyle = '#000000'; ctx.fill();
+});
+players.forEach(p => {
+if (!p.alive) return;
+ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+ctx.fillStyle = p.color; ctx.fill();
+ctx.lineWidth = 4; ctx.strokeStyle = '#ffffff'; ctx.stroke();
+ctx.fillStyle = '#ffffff';
+ctx.beginPath();
+ctx.arc(p.x - 5, p.y - 3, 3, 0, Math.PI * 2);
+ctx.arc(p.x + 5, p.y - 3, 3, 0, Math.PI * 2);
+ctx.fill();
+});
+}
+function updateLiveHUD() {
+const col = document.getElementById('liveScores');
+col.innerHTML = '';
+players.forEach(p => {
+const chip = document.createElement('div');
+chip.className = score-chip ${!p.alive ? 'out' : ''};
+chip.innerHTML = <div class="dot" style="background:${p.color}"></div> Player ${p.id + 1}: ${activeGameMode === 'coin' ? p.score : (p.alive ? 'ALIVE' : 'OUT')};
+col.appendChild(chip);
+});
+}
+function handleMatchEnd() {
+cleanUpLoops();
+switchScreen('podiumApp');
+let winner = players[0];
+if (activeGameMode === 'coin') {
+winner = players.reduce((max, p) => p.score > max.score ? p : max, players);
+} else {
+let alivePlayers = players.filter(p => p.alive);
+if (alivePlayers.length === 1) winner = alivePlayers[0];
+}
+document.getElementById('podiumTitle').innerText = Player ${winner.id + 1} Triumphs!;
+document.getElementById('podiumColor').style.background = winner.color;
+const scoresBox = document.getElementById('podiumScores');
+scoresBox.innerHTML = '';
+players.forEach(p => {
+const node = document.createElement('div');
+node.className = 'final-chip';
+node.innerText = Player ${p.id + 1}: ${activeGameMode === 'coin' ? p.score + ' coins' : (p.alive ? 'Survived' : 'Knocked Out')};
+scoresBox.appendChild(node);
+});
+}
+function rematch() { launchGame(activeGameMode); }
+renderSetupChips();
+
